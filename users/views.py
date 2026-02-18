@@ -8,6 +8,17 @@ from rest_framework.decorators import permission_classes
 from .models import Profile
 from .serializers import ProfileSerializer
 
+#Admin Views
+from rest_framework import generics
+from .models import User
+from .serializers import UserSerializer
+from .permissions import IsAdminUserRole
+
+#Approve user
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
 @api_view(['POST'])
 def register(request):
     serializer = RegisterSerializer(data=request.data)
@@ -48,3 +59,52 @@ def profile_view(request):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors)
+    
+#List unverified users
+class UnverifiedUsersView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminUserRole]
+
+    def get_queryset(self):
+        return User.objects.filter(is_verified=False).exclude(role="admin")
+
+##Approve user
+class ApproveUserView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def post(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            user.is_verified = True
+            user.save()
+            return Response({"message": "User verified"})
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+#Reject user
+class RejectUserView(APIView):
+    permission_classes = [IsAdminUserRole]
+
+    def delete(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            user.delete()
+            return Response({"message": "User rejected and deleted"})
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class HighDemandClientsView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminUserRole]
+
+    def get_queryset(self):
+        return User.objects.filter(role="client", proposals_received__gte=3)
+
+
+class LowDemandClientsView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminUserRole]
+
+    def get_queryset(self):
+        return User.objects.filter(role="client", proposals_received__lte=1)

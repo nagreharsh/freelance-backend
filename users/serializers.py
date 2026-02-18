@@ -16,3 +16,16 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['bio', 'skills', 'portfolio_url', 'hourly_rate']
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "role",
+            "is_verified",
+            "projects_posted",
+            "proposals_received",
+        ]
