@@ -32,10 +32,26 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Project.objects.all().order_by('-created_at')
+
+        user = self.request.user
+
+        # Admin sees all projects
+        if user.role == "admin":
+            return qs
+
+        # Client sees only their own projects
+        if user.role == "client":
+            return qs.filter(client=user)
+
+        # Freelancer sees only open projects
+        if user.role == "freelancer":
+            return qs.filter(status="open")
+
         # ?mine=true → return only current user's own projects (for client dashboard)
         if self.request.query_params.get('mine', '').lower() == 'true':
-            return qs.filter(client=self.request.user)
-        return qs
+            return qs.filter(client=user)
+
+        return qs.none()
 
     def perform_create(self, serializer):
         if self.request.user.role != 'client':
