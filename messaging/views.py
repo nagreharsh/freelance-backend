@@ -7,6 +7,7 @@ from .serializers import MessageSerializer
 from contracts.models import Contract
 from notifications.models import Notification
 
+
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -14,30 +15,26 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
 
-    # If detail view (like /1/read/)
-        if self.kwargs.get("pk"):
-            return Message.objects.filter(
-                sender=user
-                ) | Message.objects.filter(
-                    receiver=user
-                    )
+    def retrieve(self, request, pk=None):
+        user = request.user
 
-    # If list view (chat history)
-        contract_id = self.request.query_params.get("contract")
-        
-        if not contract_id:
-            return Message.objects.none()
-        
         try:
-            contract = Contract.objects.get(id=contract_id)
+            contract = Contract.objects.get(id=pk)
         except Contract.DoesNotExist:
-            return Message.objects.none()
-        
+            return Response(
+                {"detail": "Contract not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
         if user not in [contract.client, contract.freelancer]:
-            
             raise PermissionDenied("You are not part of this contract.")
-        return Message.objects.filter(contract=contract).order_by("timestamp")
+
+        messages = Message.objects.filter(contract=contract).order_by("timestamp")
+        serializer = self.get_serializer(messages, many=True)
+
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -52,8 +49,8 @@ class MessageViewSet(viewsets.ModelViewSet):
             contract.freelancer
             if user == contract.client
             else contract.client
-            )
-        
+        )
+
         message = serializer.save(sender=user, receiver=receiver)
 
     # Notification for receiver
@@ -62,7 +59,7 @@ class MessageViewSet(viewsets.ModelViewSet):
             contract=contract,
             type="message",
             message=f"New message from {user.username}"
-            )
+        )
 
     @action(detail=True, methods=["patch"], url_path="read")
     def mark_as_read(self, request, pk=None):

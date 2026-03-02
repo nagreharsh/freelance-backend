@@ -1,8 +1,11 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
 from .models import Review
 from .serializers import ReviewSerializer
 from notifications.models import Notification
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
+from contracts.models import Contract
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
@@ -16,6 +19,25 @@ class ReviewViewSet(viewsets.ModelViewSet):
             return Review.objects.filter(contract_id=contract_id)
 
         return Review.objects.none()
+
+    def retrieve(self, request, pk=None):
+        user = request.user
+
+        try:
+            contract = Contract.objects.get(id=pk)
+        except Contract.DoesNotExist:
+            return Response(
+                {"detail": "Contract not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user not in [contract.client, contract.freelancer]:
+            raise PermissionDenied("You are not part of this contract.")
+
+        reviews = Review.objects.filter(contract=contract)
+        serializer = self.get_serializer(reviews, many=True)
+
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -34,15 +56,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
             contract.freelancer
             if user == contract.client
             else contract.client
-            )
+        )
         
         serializer.save(
             reviewer=user,
             reviewee=reviewee
-            )
+        )
 
     # 4️⃣ Create notification
         Notification.objects.create(
             user=reviewee,
             message=f"You received a new review from {user.username}."
-            )
+        )
