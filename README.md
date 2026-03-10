@@ -156,36 +156,44 @@ bleach (input sanitization)
 System Architecture
 --------------------------------------------------
 ```
-                +----------------------+
-                |      Frontend        |
-                |  (React / Web App)   |
-                +----------+-----------+
-                           |
-                           | HTTP Requests (JWT Auth)
-                           v
-                +----------------------+
-                |    Django Backend    |
-                |  Django REST API     |
-                +----------+-----------+
-                           |
-        -------------------------------------------------
-        |        |         |        |        |          |
-        v        v         v        v        v          v
+                                             +----------------------+
+                                             |      Frontend        |
+                                             |  (React / Web App)   |
+                                             +----------+-----------+
+                                                        |
+                                                        | HTTP Requests (JWT Auth)
+                                                        v
+                                             +----------------------+
+                                             |    Django Backend    |
+                                             |   Django REST API    |
+                                             +----------+-----------+
+                                                        |
+        -------------------------------------------------------------------------------------------
+        |           |           |           |           |          |              |               |
+        v           v           v           v           v          v              v               v
 
-   +---------+ +---------+ +---------+ +---------+ +---------+ +---------+
-   |  Users  | |Projects | |Proposals| |Contracts| |Messaging| | Reviews |
-   |  App    | |  App    | |   App   | |   App   | |   App   | |   App   |
-   +---------+ +---------+ +---------+ +---------+ +---------+ +---------+
+   +---------+ +---------+ +---------+ +---------+ +---------+ +---------+ +---------------+ +-----------+
+   |  Users  | |Projects | |Proposals| |Contracts| |Messaging| | Reviews | | Notifications | | Dashboard |
+   |   App   | |   App   | |   App   | |   App   | |   App   | |   App   | |               | |           |
+   +---------+ +---------+ +---------+ +---------+ +---------+ +---------+ +---------------+ +-----------+
 
-                           |
-                           v
+                                                       |
+                                                       v
 
-                +----------------------+
-                |      Database        |
-                |      SQLite          |
-                +----------------------+
+                                           +----------------------+
+                                           |       Database       |
+                                           |       SQLite         |
+                                           +----------------------+
 
 ```
+### Architecture Highlights
+
+- **Modular Django Apps:** Each core feature (projects, proposals, contracts, etc.) is implemented as a separate Django app for scalability.
+- **JWT Authentication:** Secure token-based authentication using SimpleJWT.
+- **Role-Based Access Control:** Clients, freelancers, and admins have different permissions.
+- **Service Layer Logic:** Dashboard services aggregate platform data efficiently.
+- **Secure APIs:** Input sanitization, throttling, and permission checks ensure security.
+
 --------------------------------------------------
 Platform Workflow
 --------------------------------------------------
