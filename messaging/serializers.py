@@ -1,3 +1,4 @@
+import bleach
 from rest_framework import serializers
 from .models import Message
 
@@ -25,3 +26,6 @@ class MessageSerializer(serializers.ModelSerializer):
             "is_read",
             "timestamp",
         ]
+
+    def validate_content(self, value):
+        return bleach.clean(value)

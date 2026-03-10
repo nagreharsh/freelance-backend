@@ -1,3 +1,4 @@
+import bleach
 from rest_framework import serializers
 from .models import Review
 
@@ -54,3 +55,6 @@ class ReviewSerializer(serializers.ModelSerializer):
                 "Rating must be between 1 and 5."
             )
         return value
+
+    def validate_comment(self, value):
+        return bleach.clean(value)

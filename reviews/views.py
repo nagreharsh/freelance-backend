@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from .models import Review
@@ -61,6 +64,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(
             reviewer=user,
             reviewee=reviewee
+        )
+
+        logger.info(
+            f"Review submitted contract={contract.id} reviewer={user.username} reviewee={reviewee.username}"
         )
 
     # 4️⃣ Create notification

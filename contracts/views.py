@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -65,6 +69,11 @@ class ContractViewSet(viewsets.ModelViewSet):
             contract.start_date = timezone.now()
             contract.save()
 
+            logger.info(
+                f"Contract activated id={contract.id} client={contract.client.username} "
+                f"freelancer={contract.freelancer.username}"
+            )
+
             return Response(
                 {
                     "message": "Contract activated",
@@ -84,6 +93,10 @@ class ContractViewSet(viewsets.ModelViewSet):
             contract.end_date = timezone.now()
             contract.save()
 
+            logger.info(
+                f"Contract completed id={contract.id} by user={user.username}"
+            )
+
             return Response(
                 {
                     "message": "Contract completed",
@@ -101,6 +114,10 @@ class ContractViewSet(viewsets.ModelViewSet):
 
             contract.status = "disputed"
             contract.save()
+
+            logger.warning(
+                f"Contract disputed id={contract.id} by user={user.username}"
+            )
 
             return Response(
                 {

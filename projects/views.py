@@ -56,8 +56,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         if self.request.user.role != 'client':
             raise PermissionDenied("Only clients can post projects.")
+
+        profile = Profile.objects.get(user=self.request.user)
+        if not profile.is_verified:
+            raise PermissionDenied("Only verified clients can create projects.")
+
         serializer.save(client=self.request.user)
+
         # Update client stats
-        profile, _ = Profile.objects.get_or_create(user=self.request.user)
         profile.projects_posted_count += 1
         profile.save()

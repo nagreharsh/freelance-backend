@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'messaging',
     'notifications',
     'reviews',
+    'dashboard',
+    'drf_spectacular',
 ]
 
 REST_FRAMEWORK = {
@@ -56,7 +58,18 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 10,
+
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle"
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "100/hour",
+        "anon": "100/hour",
+        "login": "2/min"
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 MIDDLEWARE = [
@@ -138,13 +151,10 @@ USE_TZ = True
 STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'users.User'
 
-
-
-
-
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 CORS_ALLOWED_ORIGINS = [
@@ -156,3 +166,34 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
     "http://127.0.0.1:5175",
 ]
+
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "backend.log",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "INFO",
+    },
+}
+
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Freelancing Platform Backend API",
+    "DESCRIPTION": "API documentation for the Freelancing Platform Backend developed for Infosys Springboard Internship.",
+    "VERSION": "1.0.0",
+}

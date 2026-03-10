@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -53,6 +56,10 @@ class MessageViewSet(viewsets.ModelViewSet):
 
         message = serializer.save(sender=user, receiver=receiver)
 
+        logger.info(
+            f"Message sent contract={contract.id} sender={user.username} receiver={receiver.username}"
+        )
+
     # Notification for receiver
         Notification.objects.create(
             user=receiver,
@@ -70,5 +77,9 @@ class MessageViewSet(viewsets.ModelViewSet):
 
         message.is_read = True
         message.save()
+
+        logger.info(
+            f"Message read id={message.id} by user={request.user.username}"
+        )
 
         return Response({"message": "Message marked as read"})

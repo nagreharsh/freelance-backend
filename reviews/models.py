@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Review(models.Model):
     contract = models.ForeignKey(
@@ -21,7 +21,12 @@ class Review(models.Model):
         related_name="reviews_received"
     )
 
-    rating = models.IntegerField()
+    rating = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(5)
+        ]
+    )
 
     comment = models.TextField()
 

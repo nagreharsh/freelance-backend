@@ -1,4 +1,7 @@
-from rest_framework.decorators import api_view
+import logging
+logger = logging.getLogger(__name__)
+
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from .serializers import RegisterSerializer
 from django.contrib.auth import authenticate
@@ -8,12 +11,18 @@ from rest_framework.decorators import permission_classes
 from .models import Profile
 from .serializers import ProfileSerializer
 from rest_framework import status
+from common.throttles import LoginRateThrottle
 
 @api_view(['POST'])
 def register(request):
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        user = serializer.save()
+
+        logger.info(
+            f"User registered username={user.username} role={user.role}"
+        )
+
         return Response(
             {'message': 'Registration successful. Please log in.'},
             status=status.HTTP_201_CREATED
@@ -21,6 +30,7 @@ def register(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@throttle_classes([LoginRateThrottle])
 def login(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -28,6 +38,10 @@ def login(request):
     user = authenticate(username=username, password=password)
 
     if user:
+        logger.info(
+            f"User login username={user.username}"
+        )
+
         refresh = RefreshToken.for_user(user)
         return Response({
             'access': str(refresh.access_token),
@@ -54,6 +68,11 @@ def profile_view(request):
         serializer = ProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+
+            logger.info(
+                f"Profile updated username={request.user.username}"
+            )
+
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -95,6 +114,11 @@ def admin_verify_user(request, user_id):
         profile = user.profile
         profile.is_verified = True
         profile.save()
+
+        logger.info(
+            f"Admin {request.user.username} verified user {user.username}"
+        )
+
         return Response({'status': 'User verified successfully'})
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)

@@ -16,5 +16,8 @@ class Proposal(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ("project", "freelancer")
+
     def __str__(self):
         return f"Proposal for {self.project.title} by {self.freelancer.username}"
